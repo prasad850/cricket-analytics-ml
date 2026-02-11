@@ -1,0 +1,445 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPL Match Predictor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --team1-color: #3498db;
+            --team2-color: #e74c3c;
+            --text-light: #ecf0f1;
+            --text-dark: #2c3e50;
+            --bg-gradient-start: #0d1b2a;
+            --bg-gradient-end: #1a2a3a;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+            color: var(--text-light);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Stadium background overlay */
+        .stadium-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.15;
+            z-index: -1;
+        }
+        
+        /* Cricket ball animation */
+        .cricket-ball {
+            position: fixed;
+            width: 100px;
+            height: 100px;
+            right: 20px;
+            bottom: 20px;
+            opacity: 0.1;
+            z-index: -1;
+            animation: bounce 2s infinite alternate;
+        }
+        
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-20px); }
+        }
+        
+        .nav-spacer {
+            height: 80px;
+        }
+        
+        .team-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .team-title {
+            color: var(--text-light);
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+            padding-bottom: 1rem;
+        }
+        
+        .team-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 4px;
+            background: var(--accent-color);
+            border-radius: 2px;
+        }
+        
+        .form-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+        
+        .form-group select {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background-color: rgba(0, 0, 0, 0.3);
+            color: var(--text-light);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+        }
+        
+        .form-group select:hover {
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+        
+        .submit-btn {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .submit-btn:hover {
+            background-color: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .result-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .winner {
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: var(--success-color);
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        
+        .team-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .team-stat {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .team-name {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        .team-stat div:not(.team-name) {
+            margin-bottom: 0.8rem;
+        }
+        
+        .progress-container {
+            height: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 1.5rem;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            transition: width 1s ease-in-out;
+        }
+        
+        .team1-progress {
+            background-color: var(--team1-color);
+        }
+        
+        .team2-progress {
+            background-color: var(--team2-color);
+        }
+        
+        .confidence {
+            text-align: center;
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.8);
+            background: rgba(0, 0, 0, 0.2);
+            padding: 0.8rem;
+            border-radius: 8px;
+        }
+        
+        /* VS separator */
+        .vs-separator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 1rem 0;
+            position: relative;
+        }
+        
+        .vs-separator::before,
+        .vs-separator::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .vs-text {
+            margin: 0 1rem;
+            font-weight: 700;
+            color: var(--text-light);
+            background: rgba(0, 0, 0, 0.3);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .team-container {
+                padding: 1rem;
+            }
+            
+            .team-title {
+                font-size: 2rem;
+            }
+            
+            .form-container, .result-container {
+                padding: 1.5rem;
+            }
+            
+            .team-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .winner {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="stadium-bg"></div>
+    <svg class="cricket-ball" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+        <path fill="#e74c3c" d="M256 0C114.6 0 0 114.6 0 256s114.6 256 256 256 256-114.6 256-256S397.4 0 256 0zm0 448c-105.9 0-192-86.1-192-192S150.1 64 256 64s192 86.1 192 192-86.1 192-192 192z"/>
+        <path fill="#e74c3c" d="M256 128c-70.7 0-128 57.3-128 128s57.3 128 128 128 128-57.3 128-128-57.3-128-128-128zm0 224c-52.9 0-96-43.1-96-96s43.1-96 96-96 96 43.1 96 96-43.1 96-96 96z"/>
+    </svg>
+    
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm fixed-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-cricket me-2" viewBox="0 0 16 16">
+                    <path d="M11.5 2.5a.5.5 0 0 1 .5-.5c.862 0 1.573.24 2.125.627.543.384.875.946.875 1.554 0 .606-.323 1.16-.875 1.545-.552.388-1.263.624-2.125.624a.5.5 0 0 1-.5-.5v-1.71l-1.4-.7-1.245 2.24a.5.5 0 0 1-.23.253l-2.955 1.58a.5.5 0 0 1-.586-.059L.5 5.5a.5.5 0 0 1 .146-.354l3.53-3.53a.5.5 0 0 1 .354-.146h1.293a.5.5 0 0 1 .253.115l2.412 1.793a.5.5 0 0 1 .116.293v1.677l1.4.7zm-1 .5v1.82a.5.5 0 0 1-.116.293L8.5 7.5v.5a.5.5 0 0 1-.146.354l-3.5 3.5a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 0 1 0-.708l3.5-3.5A.5.5 0 0 1 7.5 7h.5v-.5a.5.5 0 0 1 .116-.293l2.412-1.793A.5.5 0 0 1 10.5 4.5v-1.5z"/>
+                    <path d="M15.354 1.646a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708l3-3a.5.5 0 0 1 .708 0z"/>
+                </svg>
+                <span class="fw-bold">Cricket Insight</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="bi bi-house-door me-1"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/player">
+                            <i class="bi bi-person me-1"></i> Player Prediction
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/team">
+                            <i class="bi bi-people me-1"></i> Team Comparison
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/matches">
+                            <i class="bi bi-calendar-event me-1"></i> Live Matches
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="nav-spacer"></div>
+    
+    <div class="team-container">
+        <h1 class="team-title">IPL Match Predictor</h1>
+        
+        <div class="form-container">
+            <form method="POST">
+                <div class="form-group">
+                    <label for="team1">Select Team 1:</label>
+                    <select name="team1" id="team1" required>
+                        <option value="">-- Select Team --</option>
+                        {% for team in teams %}
+                            <option value="{{ team }}" {% if team == team1 %}selected{% endif %}>{{ team }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="vs-separator">
+                    <span class="vs-text">VS</span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="team2">Select Team 2:</label>
+                    <select name="team2" id="team2" required>
+                        <option value="">-- Select Team --</option>
+                        {% for team in teams %}
+                            <option value="{{ team }}" {% if team == team2 %}selected{% endif %}>{{ team }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <button type="submit" class="submit-btn">Predict Winner</button>
+            </form>
+        </div>
+        
+        {% if prediction %}
+        <div class="result-container">
+            <div class="winner">
+                🏆 Predicted Winner: <strong>{{ prediction.winner }}</strong> 🏆
+            </div>
+            
+            <div class="team-stats">
+                <div class="team-stat">
+                    <div class="team-name">{{ team1 }}</div>
+                    <div>Overall Win Rate: {{ prediction.team1_win_rate }}%</div>
+                    <div>Win Probability: {{ prediction.team1_win_percentage }}%</div>
+                    <div class="progress-container">
+                        <div class="progress-bar team1-progress" style="width: {{ prediction.team1_win_percentage }}%">
+                            {% if prediction.team1_win_percentage > 15 %}{{ prediction.team1_win_percentage }}%{% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="team-stat">
+                    <div class="team-name">{{ team2 }}</div>
+                    <div>Overall Win Rate: {{ prediction.team2_win_rate }}%</div>
+                    <div>Win Probability: {{ prediction.team2_win_percentage }}%</div>
+                    <div class="progress-container">
+                        <div class="progress-bar team2-progress" style="width: {{ prediction.team2_win_percentage }}%">
+                            {% if prediction.team2_win_percentage > 15 %}{{ prediction.team2_win_percentage }}%{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="confidence">
+                <i class="bi bi-graph-up me-1"></i> Confidence Difference: {{ prediction.confidence }}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Add animation to progress bars when they come into view
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const progressBars = entry.target.querySelectorAll('.progress-bar');
+                    progressBars.forEach(bar => {
+                        const width = bar.style.width;
+                        bar.style.width = '0';
+                        setTimeout(() => {
+                            bar.style.width = width;
+                        }, 100);
+                    });
+                }
+            });
+        }, { threshold: 0.1 });
+        
+        if (document.querySelector('.result-container')) {
+            observer.observe(document.querySelector('.result-container'));
+        }
+    </script>
+</body>
+</html>

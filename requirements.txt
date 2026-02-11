@@ -1,0 +1,10 @@
+Flask
+flask-limiter
+python-dotenv
+requests
+pandas
+openpyxl
+google-generativeai
+scikit-learn
+numpy
+joblib

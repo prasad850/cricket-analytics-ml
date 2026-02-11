@@ -1,0 +1,463 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPL Player Performance Predictor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --text-light: #ecf0f1;
+            --text-dark: #2c3e50;
+            --bg-gradient-start: #0d1b2a;
+            --bg-gradient-end: #1a2a3a;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+            color: var(--text-light);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Stadium background overlay */
+        .stadium-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.15;
+            z-index: -1;
+        }
+        
+        /* Cricket ball animation */
+        .cricket-ball {
+            position: fixed;
+            width: 100px;
+            height: 100px;
+            right: 20px;
+            bottom: 20px;
+            opacity: 0.1;
+            z-index: -1;
+            animation: bounce 2s infinite alternate;
+        }
+        
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-20px); }
+        }
+        
+        .nav-spacer {
+            height: 80px;
+        }
+        
+        .player-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .player-title {
+            color: var(--text-light);
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+            padding-bottom: 1rem;
+        }
+        
+        .player-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 4px;
+            background: var(--accent-color);
+            border-radius: 2px;
+        }
+        
+        #predictionForm {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+        
+        .form-group select {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background-color: rgba(0, 0, 0, 0.3);
+            color: var(--text-light);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+        }
+        
+        .form-group select:hover {
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+        
+        .error-message {
+            color: var(--accent-color);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            height: 1rem;
+        }
+        
+        .submit-btn {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .submit-btn:hover {
+            background-color: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .submit-btn:disabled {
+            background-color: #7f8c8d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+        
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid var(--secondary-color);
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .result-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .result-card h2 {
+            color: var(--text-light);
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+        }
+        
+        .prediction-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--success-color);
+            margin-bottom: 1rem;
+        }
+        
+        .player-stats {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.8);
+            background: rgba(0, 0, 0, 0.2);
+            padding: 0.8rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .player-container {
+                padding: 1rem;
+            }
+            
+            .player-title {
+                font-size: 2rem;
+            }
+            
+            #predictionForm {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="stadium-bg"></div>
+    <svg class="cricket-ball" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+        <path fill="#e74c3c" d="M256 0C114.6 0 0 114.6 0 256s114.6 256 256 256 256-114.6 256-256S397.4 0 256 0zm0 448c-105.9 0-192-86.1-192-192S150.1 64 256 64s192 86.1 192 192-86.1 192-192 192z"/>
+        <path fill="#e74c3c" d="M256 128c-70.7 0-128 57.3-128 128s57.3 128 128 128 128-57.3 128-128-57.3-128-128-128zm0 224c-52.9 0-96-43.1-96-96s43.1-96 96-96 96 43.1 96 96-43.1 96-96 96z"/>
+    </svg>
+    
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm fixed-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-cricket me-2" viewBox="0 0 16 16">
+                    <path d="M11.5 2.5a.5.5 0 0 1 .5-.5c.862 0 1.573.24 2.125.627.543.384.875.946.875 1.554 0 .606-.323 1.16-.875 1.545-.552.388-1.263.624-2.125.624a.5.5 0 0 1-.5-.5v-1.71l-1.4-.7-1.245 2.24a.5.5 0 0 1-.23.253l-2.955 1.58a.5.5 0 0 1-.586-.059L.5 5.5a.5.5 0 0 1 .146-.354l3.53-3.53a.5.5 0 0 1 .354-.146h1.293a.5.5 0 0 1 .253.115l2.412 1.793a.5.5 0 0 1 .116.293v1.677l1.4.7zm-1 .5v1.82a.5.5 0 0 1-.116.293L8.5 7.5v.5a.5.5 0 0 1-.146.354l-3.5 3.5a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 0 1 0-.708l3.5-3.5A.5.5 0 0 1 7.5 7h.5v-.5a.5.5 0 0 1 .116-.293l2.412-1.793A.5.5 0 0 1 10.5 4.5v-1.5z"/>
+                    <path d="M15.354 1.646a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708l3-3a.5.5 0 0 1 .708 0z"/>
+                </svg>
+                <span class="fw-bold">Cricket Insight</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="bi bi-house-door me-1"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/player">
+                            <i class="bi bi-person me-1"></i> Player Prediction
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/team">
+                            <i class="bi bi-people me-1"></i> Team Comparison
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/matches">
+                            <i class="bi bi-calendar-event me-1"></i> Live Matches
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="nav-spacer"></div>
+    
+    <div class="player-container">
+        <h1 class="player-title">IPL Player Performance Predictor</h1>
+
+        <form method="POST" id="predictionForm">
+            <div class="form-group">
+                <label for="team">Select Team:</label>
+                <select name="team" id="team" required onchange="handleSelectChange(this)">
+                    <option value="">-- Choose Team --</option>
+                    {% for t in teams %}
+                        <option value="{{ t }}" {% if t == team %}selected{% endif %}>{{ t }}</option>
+                    {% endfor %}
+                </select>
+                <div id="team-error" class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="role">Select Player Type:</label>
+                <select name="role" id="role" required onchange="handleSelectChange(this)">
+                    <option value="">-- Choose Role --</option>
+                    <option value="batsman" {% if role == 'batsman' %}selected{% endif %}>Batsman</option>
+                    <option value="bowler" {% if role == 'bowler' %}selected{% endif %}>Bowler</option>
+                </select>
+                <div id="role-error" class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="player">Select Player:</label>
+                <select name="player" id="player" required>
+                    <option value="">-- Choose Player --</option>
+                    {% for p in players %}
+                        <option value="{{ p }}" {% if p == player %}selected{% endif %}>{{ p }}</option>
+                    {% endfor %}
+                </select>
+                <div id="player-error" class="error-message"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="opponent">Select Opponent:</label>
+                <select name="opponent" id="opponent" required>
+                    <option value="">-- Choose Opponent --</option>
+                    {% for o in opponents %}
+                        <option value="{{ o }}" {% if o == opponent %}selected{% endif %}>{{ o }}</option>
+                    {% endfor %}
+                </select>
+                <div id="opponent-error" class="error-message"></div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">Predict Performance</button>
+            <div class="loading" id="loadingIndicator">
+                <div class="loading-spinner"></div>
+                <p>Analyzing performance data...</p>
+            </div>
+        </form>
+
+        {% if prediction %}
+            <div class="result-card">
+                <h2>Predicted Performance</h2>
+                <div class="prediction-value">{{ prediction.split('(')[0] }}</div>
+                {% if '(' in prediction and ')' in prediction %}
+                    <div class="player-stats">{{ prediction.split('(')[1].split(')')[0] }}</div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('predictionForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            
+            // Form validation
+            form.addEventListener('submit', function(e) {
+                let isValid = true;
+                
+                // Validate team
+                if (!document.getElementById('team').value) {
+                    document.getElementById('team-error').textContent = 'Please select a team';
+                    isValid = false;
+                } else {
+                    document.getElementById('team-error').textContent = '';
+                }
+                
+                // Validate role
+                if (!document.getElementById('role').value) {
+                    document.getElementById('role-error').textContent = 'Please select a role';
+                    isValid = false;
+                } else {
+                    document.getElementById('role-error').textContent = '';
+                }
+                
+                // Validate player
+                if (!document.getElementById('player').value) {
+                    document.getElementById('player-error').textContent = 'Please select a player';
+                    isValid = false;
+                } else {
+                    document.getElementById('player-error').textContent = '';
+                }
+                
+                // Validate opponent
+                if (!document.getElementById('opponent').value) {
+                    document.getElementById('opponent-error').textContent = 'Please select an opponent';
+                    isValid = false;
+                } else {
+                    document.getElementById('opponent-error').textContent = '';
+                }
+                
+                if (isValid) {
+                    submitBtn.disabled = true;
+                    loadingIndicator.style.display = 'block';
+                } else {
+                    e.preventDefault();
+                }
+            });
+            
+            // Handle select changes
+            window.handleSelectChange = function(selectElement) {
+                const playerSelect = document.getElementById('player');
+                const opponentSelect = document.getElementById('opponent');
+                const form = document.getElementById('predictionForm');
+                
+                // Clear existing hidden inputs
+                const existingHidden = form.querySelectorAll('input[type="hidden"]');
+                existingHidden.forEach(el => el.remove());
+                
+                // Preserve selections
+                if (playerSelect.value) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'preserve_player';
+                    input.value = playerSelect.value;
+                    form.appendChild(input);
+                }
+                
+                if (opponentSelect.value) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'preserve_opponent';
+                    input.value = opponentSelect.value;
+                    form.appendChild(input);
+                }
+                
+                form.submit();
+            };
+            
+            // Restore preserved values from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const preservedPlayer = urlParams.get('preserve_player');
+            const preservedOpponent = urlParams.get('preserve_opponent');
+            
+            if (preservedPlayer) {
+                document.getElementById('player').value = preservedPlayer;
+            }
+            if (preservedOpponent) {
+                document.getElementById('opponent').value = preservedOpponent;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,504 @@
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cricket Live Scores</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --live-color: #2ecc71;
+            --upcoming-color: #f39c12;
+            --completed-color: #7f8c8d;
+            --text-light: #ecf0f1;
+            --text-dark: #2c3e50;
+            --bg-gradient-start: #1c2833;
+            --bg-gradient-end: #273746;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 80px 0 0;
+            background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+            color: var(--text-light);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1 {
+            color: var(--text-light);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+            padding-bottom: 15px;
+        }
+        
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: var(--accent-color);
+            border-radius: 3px;
+        }
+        
+        .match-section {
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .match-section:hover {
+            transform: translateY(-5px);
+        }
+        
+        .section-title {
+            color: var(--text-light);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 10px;
+            margin-top: 0;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .match-card {
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .match-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+        }
+        
+        .live-card {
+            background: rgba(46, 204, 113, 0.1);
+            border-left: 4px solid var(--live-color);
+        }
+        
+        .upcoming-card {
+            background: rgba(243, 156, 18, 0.1);
+            border-left: 4px solid var(--upcoming-color);
+        }
+        
+        .completed-card {
+            background: rgba(127, 140, 141, 0.1);
+            border-left: 4px solid var(--completed-color);
+        }
+        
+        .match-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .live-status {
+            background-color: var(--live-color);
+            color: white;
+        }
+        
+        .upcoming-status {
+            background-color: var(--upcoming-color);
+            color: white;
+        }
+        
+        .completed-status {
+            background-color: var(--completed-color);
+            color: white;
+        }
+        
+        .teams {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin: 12px 0;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .teams span.vs {
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: normal;
+            padding: 0 10px;
+        }
+        
+        .match-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            align-items: center;
+        }
+        
+        .match-name {
+            color: var(--secondary-color);
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin: 10px 0;
+        }
+        
+        .match-score {
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 5px 10px;
+            border-radius: 5px;
+            color: var(--text-light);
+            font-weight: bold;
+        }
+        
+        .match-venue {
+            color: rgba(255, 255, 255, 0.7);
+            font-style: italic;
+            margin-top: 5px;
+        }
+        
+        .no-matches {
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            padding: 30px;
+            font-size: 1.1rem;
+        }
+        
+        .last-updated {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            margin-top: 40px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+        }
+        
+        .series-name {
+            color: #9b59b6;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .match-result {
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--text-light);
+            text-align: center;
+        }
+        
+        .cricket-ball {
+            position: fixed;
+            width: 100px;
+            height: 100px;
+            right: 20px;
+            bottom: 20px;
+            opacity: 0.1;
+            z-index: -1;
+            animation: bounce 2s infinite alternate;
+        }
+        
+        @keyframes bounce {
+            from {
+                transform: translateY(0);
+            }
+            to {
+                transform: translateY(-20px);
+            }
+        }
+        
+        .stadium-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1531415074968-036ba1b575da?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.15;
+            z-index: -1;
+        }
+        
+        .nav-spacer {
+            height: 80px;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .match-section {
+                padding: 15px;
+            }
+            
+            .teams {
+                font-size: 1.1rem;
+                flex-direction: column;
+            }
+        }
+    </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <div class="stadium-bg"></div>
+    <svg class="cricket-ball" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+        <path fill="#e74c3c" d="M256 0C114.6 0 0 114.6 0 256s114.6 256 256 256 256-114.6 256-256S397.4 0 256 0zm0 448c-105.9 0-192-86.1-192-192S150.1 64 256 64s192 86.1 192 192-86.1 192-192 192z"/>
+        <path fill="#e74c3c" d="M256 128c-70.7 0-128 57.3-128 128s57.3 128 128 128 128-57.3 128-128-57.3-128-128-128zm0 224c-52.9 0-96-43.1-96-96s43.1-96 96-96 96 43.1 96 96-43.1 96-96 96z"/>
+    </svg>
+    
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm fixed-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-cricket me-2" viewBox="0 0 16 16">
+                    <path d="M11.5 2.5a.5.5 0 0 1 .5-.5c.862 0 1.573.24 2.125.627.543.384.875.946.875 1.554 0 .606-.323 1.16-.875 1.545-.552.388-1.263.624-2.125.624a.5.5 0 0 1-.5-.5v-1.71l-1.4-.7-1.245 2.24a.5.5 0 0 1-.23.253l-2.955 1.58a.5.5 0 0 1-.586-.059L.5 5.5a.5.5 0 0 1 .146-.354l3.53-3.53a.5.5 0 0 1 .354-.146h1.293a.5.5 0 0 1 .253.115l2.412 1.793a.5.5 0 0 1 .116.293v1.677l1.4.7zm-1 .5v1.82a.5.5 0 0 1-.116.293L8.5 7.5v.5a.5.5 0 0 1-.146.354l-3.5 3.5a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 0 1 0-.708l3.5-3.5A.5.5 0 0 1 7.5 7h.5v-.5a.5.5 0 0 1 .116-.293l2.412-1.793A.5.5 0 0 1 10.5 4.5v-1.5z"/>
+                    <path d="M15.354 1.646a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708l3-3a.5.5 0 0 1 .708 0z"/>
+                </svg>
+                <span class="fw-bold">Cricket Insight</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="bi bi-house-door me-1"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/player">
+                            <i class="bi bi-person me-1"></i> Player Prediction
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/team">
+                            <i class="bi bi-people me-1"></i> Team Comparison
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/matches">
+                            <i class="bi bi-calendar-event me-1"></i> Live Matches
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="nav-spacer"></div>
+    
+    <div class="container">
+        <h1>Live Cricket Scores</h1>
+        
+        <!-- Live Matches Section -->
+        <div class="match-section">
+            <h2 class="section-title">
+                <i class="bi bi-tv-fill me-2" style="color: var(--live-color);"></i>
+                Live Matches
+            </h2>
+            {% if matches.live %}
+                {% for match in matches.live %}
+                <div class="match-card live-card">
+                    <div class="series-name">{{ match.series }}</div>
+                    <div>
+                        <span class="match-status live-status">LIVE</span>
+                        <span>{{ match.status }}</span>
+                    </div>
+                    <div class="teams">
+                        {% if match.teams|length >= 2 %}
+                            <span>{{ match.teams[0] }}</span>
+                            <span class="vs">vs</span>
+                            <span>{{ match.teams[1] }}</span>
+                        {% else %}
+                            <span>Teams information not available</span>
+                        {% endif %}
+                    </div>
+                    
+                    {% if match.scores %}
+                        {% for score in match.scores %}
+                        <div class="match-info">
+                            <span class="match-score">
+                                {{ score.inning }}: {{ score.runs }}/{{ score.wickets }} ({{ score.overs }})
+                            </span>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <div class="match-name">{{ match.name }} ({{ match.matchType }})</div>
+                    <div class="match-venue">
+                        <i class="bi bi-geo-alt-fill me-1"></i>{{ match.venue }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-matches">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    No live matches currently. Check back later!
+                    <div style="margin-top: 10px;">
+                        <small>If you expected matches to be live, the API might not be updating.</small>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Upcoming Matches Section -->
+        <div class="match-section">
+            <h2 class="section-title">
+                <i class="bi bi-clock-fill me-2" style="color: var(--upcoming-color);"></i>
+                Upcoming Matches
+            </h2>
+            {% if matches.upcoming %}
+                {% for match in matches.upcoming %}
+                <div class="match-card upcoming-card">
+                    <div class="series-name">{{ match.series }}</div>
+                    <div>
+                        <span class="match-status upcoming-status">UPCOMING</span>
+                    </div>
+                    <div class="teams">
+                        {% if match.teams|length >= 2 %}
+                            <span>{{ match.teams[0] }}</span>
+                            <span class="vs">vs</span>
+                            <span>{{ match.teams[1] }}</span>
+                        {% else %}
+                            <span>Teams information not available</span>
+                        {% endif %}
+                    </div>
+                    <div class="match-name">{{ match.name }} ({{ match.matchType }})</div>
+                    <div class="match-info">
+                        <span><i class="bi bi-calendar-event me-1"></i>Starts: {{ match.date }}</span>
+                        <span><i class="bi bi-geo-alt-fill me-1"></i>{{ match.venue }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-matches">
+                    <i class="bi bi-calendar-x-fill me-2"></i>
+                    No upcoming matches scheduled
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Completed Matches Section -->
+        <div class="match-section">
+            <h2 class="section-title">
+                <i class="bi bi-check-circle-fill me-2" style="color: var(--completed-color);"></i>
+                Recent Results
+            </h2>
+            {% if matches.completed %}
+                {% for match in matches.completed %}
+                <div class="match-card completed-card">
+                    <div class="series-name">{{ match.series }}</div>
+                    <div>
+                        <span class="match-status completed-status">COMPLETED</span>
+                    </div>
+                    <div class="teams">
+                        {% if match.teams|length >= 2 %}
+                            <span>{{ match.teams[0] }}</span>
+                            <span class="vs">vs</span>
+                            <span>{{ match.teams[1] }}</span>
+                        {% else %}
+                            <span>Teams information not available</span>
+                        {% endif %}
+                    </div>
+                    <div class="match-result">{{ match.status }}</div>
+                    <div class="match-name">{{ match.name }} ({{ match.matchType }})</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-matches">
+                    <i class="bi bi-archive-fill me-2"></i>
+                    No recent completed matches
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="last-updated">
+            <i class="bi bi-clock-history me-2"></i>
+            Last updated: {{ current_time }}
+            <span class="ms-3">Auto-refreshing in <span id="countdown">30</span> seconds</span>
+        </div>
+    </div>
+
+    <script>
+        // Auto-refresh countdown
+        let seconds = 30;
+        const countdownElement = document.getElementById('countdown');
+        
+        const countdown = setInterval(function() {
+            seconds--;
+            countdownElement.textContent = seconds;
+            
+            if (seconds <= 0) {
+                clearInterval(countdown);
+                window.location.reload();
+            }
+        }, 1000);
+        
+        // Auto-refresh every 30 seconds
+        setTimeout(function(){
+            window.location.reload();
+        }, 30000);
+        
+        // Add animation to match cards when they come into view
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = 1;
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+        
+        document.querySelectorAll('.match-card').forEach(card => {
+            card.style.opacity = 0;
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>
