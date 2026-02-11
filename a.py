@@ -259,11 +259,14 @@ def fetch_cricapi_matches(session: Session) -> Optional[Dict[str, Any]]:
     url = app.config["CRICAPI_URL"]
     if not url:
         return None
-    headers = {}
+    
+    # Add API key as URL parameter (CricAPI format)
+    params = {}
     if app.config["CRICAPI_KEY"]:
-        headers["X-API-KEY"] = app.config["CRICAPI_KEY"]
+        params["apikey"] = app.config["CRICAPI_KEY"]
+    
     try:
-        r = session.get(url, headers=headers, timeout=app.config["HTTP_TIMEOUT"])
+        r = session.get(url, params=params, timeout=app.config["HTTP_TIMEOUT"])
         if r.status_code == 200:
             return r.json()
         app.logger.warning(f"CricAPI non-200: {r.status_code}")
@@ -274,42 +277,108 @@ def fetch_cricapi_matches(session: Session) -> Optional[Dict[str, Any]]:
 
 
 def process_matches(api_data: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
-    matches = {"live": [], "upcoming": [], "completed": []}
+    series_matches = {}
 
     # From Gemini
     gem = api_data.get("gemini", {})
     for m in gem.get("matches", []):
         status = str(m.get("status", "")).lower()
+        series_name = extract_series_name(m.get("name", "Unknown Series"))
         card = {
             "name": m.get("name", "Match"),
             "teams": m.get("teams", []),
             "venue": m.get("venue", "Venue not available"),
             "scores": m.get("scores", []),
             "status": m.get("status", "Unknown"),
+            "match_status": "live" if "live" in status or "in progress" in status else "upcoming" if "upcoming" in status or "scheduled" in status else "completed"
         }
-        if "live" in status or "in progress" in status:
-            matches["live"].append(card)
-        elif "upcoming" in status or "scheduled" in status:
-            matches["upcoming"].append(card)
+        
+        if series_name not in series_matches:
+            series_matches[series_name] = []
+        series_matches[series_name].append(card)
 
     # From CricAPI
     cr = api_data.get("cricapi")
     if cr and isinstance(cr, dict) and "data" in cr:
         for m in cr["data"]:
             s = str(m.get("status", "")).lower()
-            if any(x in s for x in ["completed", "won", "result"]):
-                matches["completed"].append({
-                    "id": m.get("id", ""),
-                    "name": m.get("name", "Match"),
-                    "status": m.get("status", "Status not available"),
-                    "date": m.get("date", ""),
-                    "venue": m.get("venue", "Venue not available"),
-                    "teams": m.get("teams", []),
-                    "scores": m.get("score", []),
-                    "matchType": m.get("matchType", ""),
-                    "series": m.get("series", "")
-                })
-    return matches
+            series_name = extract_series_name(m.get("name", "Unknown Series"))
+            
+            # Determine match status
+            match_started = m.get("matchStarted", False)
+            match_ended = m.get("matchEnded", False)
+            
+            if match_started and not match_ended:
+                match_status = "live"
+            elif match_started and match_ended:
+                match_status = "completed"
+            elif not match_started:
+                match_status = "upcoming"
+            else:
+                # Fallback to text-based categorization
+                if any(x in s for x in ["live", "in progress", "playing"]):
+                    match_status = "live"
+                elif any(x in s for x in ["upcoming", "scheduled", "match starts at", "fixture"]):
+                    match_status = "upcoming"
+                elif any(x in s for x in ["won", "result", "finished", "beat"]):
+                    match_status = "completed"
+                else:
+                    match_status = "upcoming" if "starts at" in s else "completed"
+            
+            match_card = {
+                "id": m.get("id", ""),
+                "name": m.get("name", "Match"),
+                "status": m.get("status", "Status not available"),
+                "date": m.get("date", ""),
+                "venue": m.get("venue", "Venue not available"),
+                "teams": m.get("teams", []),
+                "scores": m.get("score", []),
+                "matchType": m.get("matchType", ""),
+                "series": m.get("series", ""),
+                "match_status": match_status
+            }
+            
+            if series_name not in series_matches:
+                series_matches[series_name] = []
+            series_matches[series_name].append(match_card)
+    
+    return series_matches
+
+
+def extract_series_name(match_name: str) -> str:
+    """Extract series name from match name"""
+    if not match_name:
+        return "Unknown Series"
+    
+    # Common series patterns
+    series_patterns = [
+        "ICC Under 19 World Cup",
+        "Ranji Trophy Elite",
+        "IPL",
+        "Big Bash League", 
+        "The Hundred",
+        "Pakistan A v England Lions in UAE",
+        "County Championship",
+        "Vitality Blast",
+        "Sheffield Shield"
+    ]
+    
+    match_lower = match_name.lower()
+    
+    for pattern in series_patterns:
+        if pattern.lower() in match_lower:
+            # Extract the full series name with year if present
+            parts = match_name.split(", ")
+            for part in parts:
+                if pattern.lower() in part.lower():
+                    return part.strip()
+    
+    # Fallback: try to extract series from the end of match name
+    parts = match_name.split(", ")
+    if len(parts) >= 2:
+        return parts[-1].strip()
+    
+    return "Other Matches"
 
 
 # -----------------------------
